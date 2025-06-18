@@ -45,4 +45,37 @@ contract SwapNaira is Ownable {
         isTokenSupported[token] = false;
         emit TokenSupported(token, false);
     }
+
+    // --------------------------------------------
+    // 🔁 Swap ETH → NairaX
+    // --------------------------------------------
+
+    function swapETHToNaira() external payble {
+        uint256 rate = rates[address(0)];
+        require(rate > 0, "ETH rate not set");
+
+        uint256 nairaAmount = (msg.value * rate) / 1 ether;
+        nairaToken.mint(msg.sender, nairaAmount);
+
+        emit SwapETH(msg.sender, msg.value, nairaAmount);
+    }
+
+    // --------------------------------------------
+    // 🔁 Swap ERC20 → NairaX
+    // --------------------------------------------
+
+    function swapTokenToNaira(address token, uint256 amount) external {
+        require(isTokenSupported[token], "Token not supported") ;
+
+        uint256 rate = rates[token];
+        require(rate > 0, "Rate not set");
+
+        // Transfer the ERC20 to contract
+        IERC20(token).transferFrom(msg.sender, address(this), amount);
+
+        uint256 nairaAmount = (amount * rate) / 1 ether;
+        nairaToken.mint(msg.sender, nairaAmount);
+
+        emit SwapToken(msg.sender, token, amount, nairaAmount);
+    }
 }
