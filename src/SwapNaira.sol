@@ -4,78 +4,105 @@ pragma solidity ^0.8.26;
 
 import {IERC20} from "lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {Ownable} from "lib/openzeppelin-contracts/contracts/access/Ownable.sol";
+import {ReentrancyGuard} from "lib/openzeppelin-contracts/contracts/utils/ReentrancyGuard.sol";
 import {NairaX} from "./NairaX.sol";
 
-contract SwapNaira is Ownable {
-    /// @notice The NGN stable token (mintable)    
-    NairaX public NairaToken;
+/**
+ * @title SwapNaira - ETH/Token to NairaX Exchange
+ * @notice Facilitates conversions between ETH/ERC20s and NairaX
+ * @dev Implements reentrancy protection and proper access control
+ * @author KAYDHEE
+ */
 
-    /// @notice Token address to rate (e.g 1 ETH = 1,000,000 NGN = 1,000,000e18)
+contract SwapNaira is Ownable, ReentrancyGuard {
+    // Using custom errors to reduce gas costs
+    // ERRORS
+    error SwapNaira__InvalidRate();
+    error SwapNaira__UnsupportedToken();
+    error SwapNaira__RateNotSet();
+    error SwapNaira__TransferFailed();
+    error SwapNaira__ZeroAmountProhibited();
+    error SwapNaira__ContractNotInitialized();
+
+    NairaX public immutable i_nairaToken;
+    bool public initialized;
+
+    // Token address to rate (e.g 1 ETH = 1,000,000 NGN = 1,000,000e18)
     mapping(address => uint256) public rates;
-
-    /// @notice List of supported tokens
-    mapping(address => bool) public isTokenSupported;
+    mapping(address => bool) public supportedTokens;
 
     // EVENTS
-    event SwapETH(address indexed user, uint256 ethAmount, uint256 ngnMinted);
-    event SwapToken(address indexed user, address token, uint256 tokenAmount, uint256 ngnMinted);
     event RateUpdated(address indexed token, uint256 newRate);
-    event TokenSupported(address indexed token, bool supported);
-
-    constructor(address _nairaToken) {
-        nairaToken = NairaX(_nairaToken);
+    event TokenSupportedToggled(address indexed token, bool supported);
+    event EthSwapped(address indexed user, uint256 ethIn, uint256 nairaOut);
+    event TokenSwapped(address indexed user, address token, uint256 tokenIn, uint256 nairaOut);
+    
+    constructor(address _nairaToken) Ownable(msg.sender) {
+        if(_nairaToken == address(0)) revert SwapNaira__ZeroAmountProhibited();
+        i_nairaToken = NairaX(_nairaToken);
     }
 
-     // --------------------------------------------
-    // 🔐 Admin Functions
-    // --------------------------------------------
-
-    function setRate(address token, uint256 rateInNGN) external onlyOwner {
-        require(rateInNGN > 0, "Rate must be greater than 0");
-        rates[token] = rateInNGN;
-        emit RateUpdated(token, rateInNGN);
+    /**
+     * @notice Initializes swap contract permissions
+     */
+    function initialize() external onlyOwner {
+        i_nairaToken.setMinter(address(this));
+        initialized = true;
     }
 
-    function addSupportedToken(address token) external onlyOwner {
-        isTokenSupported[token] = true;
-        emit TokenSupported(token, true);
+     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // ADMIN FUNCTIONS
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    function setRate(address token, uint256 rate) external onlyOwner {
+        if(rate == 0) revert SwapNaira__InvalidRate();
+        rates[token] = rate;
+        emit RateUpdated(token, rate);
     }
 
-    function removeSupportedToken(address token) external onlyOwner {
-        isTokenSupported[token] = false;
-        emit TokenSupported(token, false);
+    function setTokenSupport(address token, bool supported) external onlyOwner {
+        if (token == address(0)) revert SwapNaira__ZeroAmountProhibited();
+        supportedTokens[token] = supported;
+        emit TokenSupportedToggled(token, supported);
     }
 
-    // --------------------------------------------
-    // 🔁 Swap ETH → NairaX
-    // --------------------------------------------
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // USER FUNCTIONS
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  
 
-    function swapETHToNaira() external payble {
-        uint256 rate = rates[address(0)];
-        require(rate > 0, "ETH rate not set");
+    function swapETHToNaira() external payable nonReentrant {
+       if (!initialized) revert SwapNaira__ContractNotInitialized();
+       if (msg.value == 0) revert SwapNaira__ZeroAmountProhibited();
 
-        uint256 nairaAmount = (msg.value * rate) / 1 ether;
-        nairaToken.mint(msg.sender, nairaAmount);
+       uint256 rate = rates[address(0)];
+       if (rate == 0) revert SwapNaira__RateNotSet();
 
-        emit SwapETH(msg.sender, msg.value, nairaAmount);
+       uint nairaAmount = (msg.value * rate) / 1 ether;
+       emit EthSwapped(msg.sender, msg.value, nairaAmount);
+       i_nairaToken.mint(msg.sender, nairaAmount);
     }
 
-    // --------------------------------------------
-    // 🔁 Swap ERC20 → NairaX
-    // --------------------------------------------
+    function swapTokenToNaira(address token, uint256 amount) external nonReentrant {
+       if (!initialized) revert SwapNaira__ContractNotInitialized();
+       if (!supportedTokens[token]) revert SwapNaira__UnsupportedToken();
+       if (amount == 0) revert SwapNaira__ZeroAmountProhibited();
 
-    function swapTokenToNaira(address token, uint256 amount) external {
-        require(isTokenSupported[token], "Token not supported") ;
+       uint256 rate = rates[token];
+       if (rate == 0) revert SwapNaira__RateNotSet();
 
-        uint256 rate = rates[token];
-        require(rate > 0, "Rate not set");
+       bool success = IERC20(token).transferFrom(msg.sender, address(this), amount);
+       if (!success) revert SwapNaira__TransferFailed();
 
-        // Transfer the ERC20 to contract
-        IERC20(token).transferFrom(msg.sender, address(this), amount);
+       uint256 nairaAmount = (amount * rate) / 1 ether;
+       emit TokenSwapped(msg.sender, token, amount, nairaAmount);
+       i_nairaToken.mint(msg.sender, nairaAmount);
+    }
 
-        uint256 nairaAmount = (amount * rate) / 1 ether;
-        nairaToken.mint(msg.sender, nairaAmount);
+    /**
+     * @notice Emergency token recovery
+     */
 
-        emit SwapToken(msg.sender, token, amount, nairaAmount);
+    function recoverERC20(address token, uint256 amount) external onlyOwner {
+        IERC20(token).transfer(owner(), amount);
     }
 }
