@@ -167,19 +167,3 @@
 //         receive() external payable {}
 //     }
 // }
-
-
-
-
-
-
-
-
-
-
-// function test_setRate_RevertIfZeroRate() public {
-//     // Test that setting zero rate fails
-//     vm.prank(owner);
-//     vm.expectRevert("SwapNaira__InvalidRate()");
-//     swapNaira.setRate(address(0), 0);
-// }

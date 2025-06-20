@@ -99,4 +99,32 @@ contract SwapNairaTest is Test {
         swapNaira.setRate(address(0), 0);
     }
 
+    // ========== TOKEN TO NAIRAX TESTS ========== //
+
+    function test_swapTokenToNaira() public {
+        uint256 btcAmount = 1e18;
+        uint256 expectedNaira = (btcAmount * BTC_RATE) / 1 ether;
+
+        vm.startPrank(user);
+        tBTC.approve(address(swapNaira), btcAmount);
+        swapNaira.swapTokenToNaira(address(tBTC), btcAmount);
+        vm.stopPrank();
+
+        assertEq(nairaToken.balanceOf(user), expectedNaira);
+        assertEq(tBTC.balanceOf(address(swapNaira)), btcAmount);
+    }
+
+    function test_swapTokenToNaira_RevertIfUnsupportedToken() public {
+        TestToken unsupportedToken = new TestToken("Unsupported", "UNSP", 1000e18);
+
+        vm.startPrank(user);
+        unsupportedToken.approve(address(swapNaira), 1e18);
+        vm.expectRevert("SwapNaira__UnsupportedToken()");
+        swapNaira.swapTokenToNaira(address(unsupportedToken), 1e18);
+        vm.stopPrank();
+    }
+
+    function test_SwapTokenToNaira_RevertIfTransferFails() public {
+        
+    }
 }
