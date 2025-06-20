@@ -72,4 +72,31 @@ contract SwapNairaTest is Test {
         assertEq(address(swapNaira).balance, ethAmount);
     }
 
+    function test_swapETHToNaira_RevertIfZeroAmount() public {
+        vm.prank(user);
+        vm.expectRevert("SwapNaira__ZeroAmountProhibited()");
+        swapNaira.swapETHToNaira{value: 0}();
+    }
+
+    function test_swapETHToNaira_RevertIfRateNotSet() public {
+        NairaX newNaira = new NairaX(address(this));
+
+        SwapNaira newSwap = new SwapNaira(address(newNaira));
+        
+        newNaira.transferOwnership(address(newSwap));
+
+        newSwap.initialize();
+
+        vm.prank(user);
+        vm.deal(user, 1 ether);
+        vm.expectRevert("SwapNaira__RateNotSet()");
+        newSwap.swapETHToNaira{value: 1 ether}();
+    }
+
+    function test_setRate_RevertIfZeroRate() public {
+        vm.prank(owner);
+        vm.expectRevert("SwapNaira__InvalidRate()");
+        swapNaira.setRate(address(0), 0);
+    }
+
 }
