@@ -13,7 +13,7 @@ contract SwapNairaTest is Test {
 
     address public owner = address(this); // test contract is owner
     address public user = address(0xBEEF);
-    // address public attacker = address(0xBAD);
+    address public attacker = address(0xBAD);
 
     uint256 public constant ETH_RATE = 1_000_000e18;
     uint256 public constant BTC_RATE = 92_000_000e18;
@@ -125,6 +125,39 @@ contract SwapNairaTest is Test {
     }
 
     function test_SwapTokenToNaira_RevertIfTransferFails() public {
-        
+        // User hasn't approved the swap contract
+        vm.prank(user);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                bytes4(keccak256("ERC20InsufficientAllowance(address,uint256,uint256)")),
+                address(swapNaira), 0, 1e18
+            )
+        );
+
+        swapNaira.swapTokenToNaira(address(tBTC), 1e18);
+    }
+
+    // ========== ADMIN FUNCTION TESTS ========== //
+
+    function test_SetRate_OnlyOwner() public {
+        vm.prank(attacker);
+
+        vm.expectRevert(abi.encodeWithSelector(
+            bytes4(keccak256("OwnableUnauthorizedAccount(address)")),
+            attacker
+        ));
+
+        swapNaira.setRate(address(0), 999);
+    }
+
+    function test_SetTokenSupport_OnlyOwner() public {
+        vm.prank(attacker);
+
+        vm.expectRevert(abi.encodeWithSelector(
+            bytes4(keccak256("OwnableUnauthorizedAccount(address)")),
+            attacker
+        ));
+
+        swapNaira.setTokenSupport(address(tBTC), false);
     }
 }
