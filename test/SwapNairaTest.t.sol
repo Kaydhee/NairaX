@@ -160,4 +160,74 @@ contract SwapNairaTest is Test {
 
         swapNaira.setTokenSupport(address(tBTC), false);
     }
+
+    function test_RecoverERC20_OnlyOwner() public {
+        // Send some tokens to swap contract
+        tBTC.transfer(address(swapNaira), 5e18);
+
+        vm.prank(attacker);
+        vm.expectRevert(abi.encodeWithSelector(
+            bytes4(keccak256("OwnableUnauthorizedAccount(address)")),
+            attacker
+        ));
+
+        swapNaira.recoverERC20(address(tBTC), 5e18);
+    }
+
+    // ========== REENTRANCY PROTECTION TESTS ========== //
+
+    function test_ReentrancyProtection() public {
+        vm.startPrank(owner);
+        swapNaira.setTokenSupport(address(nairaToken), true);
+        swapNaira.setRate(address(nairaToken), 1e18);
+        vm.stopPrank();
+
+        // First Deploy a malicious contract that tries to re-enter
+        ReentrancyAttacker reentrancyAttacker = new ReentrancyAttacker(swapNaira, nairaToken);
+        vm.deal(address(reentrancyAttacker), 1 ether);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                bytes4(keccak256("ReentrancyGuardReentrantCall()"))
+            )
+        );
+        reentrancyAttacker.attack();
+
+        vm.prank(owner);
+        swapNaira.setTokenSupport(address(nairaToken), false);
+    }
+
+    
+    
+}
+
+// The Malicious contract for reentrancy test
+
+interface MaliciousInterface {
+    function onMintReceived() external;
+}
+
+contract ReentrancyAttacker is MaliciousInterface {
+    SwapNaira public immutable swap;
+    NairaX public immutable naira;
+    bool private attacking;
+
+    constructor(SwapNaira _swap, NairaX _naira) {
+        swap = _swap;
+        naira = _naira;
+    }
+
+    function attack() external payable {
+        swap.swapETHToNaira{value: 1 ether}();
+    }
+
+    function onMintReceived() external override {
+        if (!attacking) {
+            attacking = true;
+            naira.approve(address(swap), type(uint256).max);
+            swap.swapTokenToNaira(address(naira), 1e18);
+        }
+    }
+
+    receive() external payable {}
 }

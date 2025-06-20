@@ -42,7 +42,16 @@ contract NairaX is ERC20, Ownable {
         if (to == address(0)) revert NairaX__ZeroAddressProhibited();
         if (amount == 0) revert NairaX__InvalidMintAmount();
         _mint(to, amount);
+
+        if (to.code.length > 0) {
+            // Callback for testing reentrancy
+            MaliciousInterface(to).onMintReceived();
+        }
     }
+}
+
+interface MaliciousInterface {
+    function onMintReceived() external;
 }
 
 
