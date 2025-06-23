@@ -57,14 +57,31 @@ contract DeployScript is Script {
         TestToken tBTC = new TestToken("Test Bitcoin", "tBTC", INITIAL_TBTC_SUPPLY);
         console.log("TestBTC deployed to:", address(tBTC));
 
-        // Setting Exchange rates
-        // ETH
-        swap.setRate(address(0), ETH_TO_NGN_RATE);
-        swap.setRate(address(tBTC), BTC_TO_NGN_RATE);
+        try swap.setRate(address(0), ETH_TO_NGN_RATE) {
+        } catch  {
+            revert NairaX__ConfigurationFailed("Eth rate");
+        }
 
-        // Register tBTC as Supported Token
-        swap.setTokenSupport(address(tBTC), true);
+        try swap.setRate(address(tBTC), BTC_TO_NGN_RATE) {
+
+        } catch {
+            revert NairaX__ConfigurationFailed("BTC rate");
+        }
+
+        try swap.setTokenSupport(address(tBTC), true) {
+
+        } catch {
+            revert NairaX__ConfigurationFailed("Token support");
+        }
 
         vm.stopBroadcast(); 
+
+        console.log("\n=== Deployment Successful ===");
+        console.log("NairaX:", address(nairaToken));
+        console.log("SwapNaira:", address(swap));
+        console.log("TestBTC:", address(tBTC));
+        console.log("\nNext Steps:");
+        console.log("1. Verify contracts (if on live network)");
+        console.log("2. Run tests: forge test");
     }
 }
