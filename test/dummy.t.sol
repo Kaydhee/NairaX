@@ -1,41 +1,94 @@
 // // SPDX-License-Identifier: MIT
-// pragma solidity ^0.8.20;
+// pragma solidity ^0.8.26;
 
-// import "forge-std/Script.sol";
-// import "../contracts/NairaX.sol";
-// import "../contracts/SwapNaira.sol";
-// import "../contracts/TestToken.sol";
+// import {Script, console} from "forge-std/Script.sol";
+// import {NairaX} from "../src/NairaX.sol";
+// import {SwapNaira} from "../src/SwapNaira.sol";
+// import {TestToken} from "../src/TestToken.sol";
 
 // contract DeployScript is Script {
+//     // Custom errors
+//     error InvalidDeployer(address deployer, uint256 balance);
+//     error OwnershipMismatch(address expected, address actual);
+//     error UninitializedContract();
+//     error ConfigurationFailed(string setting);
+
+//     // Configuration constants
+//     uint256 public constant INITIAL_TBTC_SUPPLY = 1_000_000e18;
+//     uint256 public constant ETH_TO_NGN_RATE = 1_000_000e18;
+//     uint256 public constant BTC_TO_NGN_RATE = 92_000_000e18;
+
 //     function run() external {
-//         // Load private key from .env (set via --private-key or ENV var)
+//         // 1. Environment setup with checks
 //         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+//         address deployer = vm.addr(deployerPrivateKey);
+        
+//         if (deployer.balance == 0) {
+//             revert InvalidDeployer(deployer, 0);
+//         }
+
+//         console.log("\n=== Deployment Started ===");
+//         console.log("Deployer Address:", deployer);
+//         console.log("Deployer Balance:", deployer.balance / 1e18, "ETH");
 
 //         vm.startBroadcast(deployerPrivateKey);
 
-//         // 1. Deploy NairaX
-//         NairaX nairaToken = new NairaX();
-//         console.log("✅ NairaX deployed to:", address(nairaToken));
+//         // 2. Contract deployment with verification
+//         console.log("\n[1/4] Deploying NairaX...");
+//         NairaX nairaToken = new NairaX(deployer);
+//         if (nairaToken.owner() != deployer) {
+//             revert OwnershipMismatch(deployer, nairaToken.owner());
+//         }
+//         console.log("✓ NairaX deployed to:", address(nairaToken));
 
-//         // 2. Deploy SwapNaira
+//         console.log("\n[2/4] Deploying SwapNaira...");
 //         SwapNaira swap = new SwapNaira(address(nairaToken));
-//         console.log("✅ SwapNaira deployed to:", address(swap));
+//         console.log("✓ SwapNaira deployed to:", address(swap));
 
-//         // 3. Transfer ownership of NairaX to Swap contract
+//         // 3. Configuration with error handling
+//         console.log("\n[3/4] Configuring Contracts...");
 //         nairaToken.transferOwnership(address(swap));
+//         if (nairaToken.owner() != address(swap)) {
+//             revert OwnershipMismatch(address(swap), nairaToken.owner());
+//         }
+        
+//         swap.initialize();
+//         if (!swap.initialized()) {
+//             revert UninitializedContract();
+//         }
 
-//         // 4. (Optional) Deploy dummy TestBTC
-//         TestToken tBTC = new TestToken("Test Bitcoin", "tBTC", 1_000_000e18);
-//         console.log("✅ TestBTC deployed to:", address(tBTC));
+//         console.log("\n[4/4] Deploying Test Tokens...");
+//         TestToken tBTC = new TestToken("Test Bitcoin", "tBTC", INITIAL_TBTC_SUPPLY);
+//         console.log("✓ TestBTC deployed to:", address(tBTC));
 
-//         // 5. Set exchange rates
-//         // ETH: address(0)
-//         swap.setRate(address(0), 1_000_000e18); // 1 ETH = ₦1,000,000
-//         swap.setRate(address(tBTC), 92_000_000e18); // 1 tBTC = ₦92,000,000
+//         // 4. Exchange configuration
+//         try swap.setRate(address(0), ETH_TO_NGN_RATE) {
+//             // Success
+//         } catch {
+//             revert ConfigurationFailed("ETH rate");
+//         }
 
-//         // 6. Register tBTC as supported token
-//         swap.addSupportedToken(address(tBTC));
+//         try swap.setRate(address(tBTC), BTC_TO_NGN_RATE) {
+//             // Success
+//         } catch {
+//             revert ConfigurationFailed("BTC rate");
+//         }
+
+//         try swap.setTokenSupport(address(tBTC), true) {
+//             // Success
+//         } catch {
+//             revert ConfigurationFailed("Token support");
+//         }
 
 //         vm.stopBroadcast();
+
+//         // 5. Final verification
+//         console.log("\n=== Deployment Successful ===");
+//         console.log("NairaX:", address(nairaToken));
+//         console.log("SwapNaira:", address(swap));
+//         console.log("TestBTC:", address(tBTC));
+//         console.log("\nNext Steps:");
+//         console.log("1. Verify contracts (if on live network)");
+//         console.log("2. Run tests: forge test");
 //     }
 // }

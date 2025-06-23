@@ -8,14 +8,34 @@ import {SwapNaira} from "../src/SwapNaira.sol";
 import {TestToken} from "../src/TestToken.sol";
 
 contract DeployScript is Script {
+    error NairaX__InvalidDeployer(address deployer, uint256 balance);
+    error NairaX__OwnershipMismatch(address expected, address actual);
+    error NairaX__UninitializedContract();
+    error NairaX__ConfigurationFailed(string setting);
+    
+    uint256 public constant INITIAL_TBTC_SUPPLY = 1_000_000e18;
+    uint256 public constant ETH_TO_NGN_RATE = 1_000_000e18;
+    uint256 public constant BTC_TO_NGN_RATE = 92_000_000e18;
+
     function run() external {
         uint256 deployerPrivateKey = uint256(vm.envBytes32("PRIVATE_KEY"));
-        address deployer = vm.addr(deployerPrivateKey); // ✅ Get deployer address
+        address deployer = vm.addr(deployerPrivateKey);
+
+        if (deployer.balance == 0) {
+            revert NairaX__InvalidDeployer(deployer, 0);
+        }
+
+        console.log("\n=== Deployment Started ===");
+        console.log("Deployer Address:", deployer);
+        console.log("Deployer Balance:", deployer.balance / 1e18, "ETH");
     
         vm.startBroadcast(deployerPrivateKey);
 
         // Deploy NairaX
         NairaX nairaToken = new NairaX(deployer);
+        if (nairaToken.owner() != deployer) {
+            revert NairaX__OwnershipMismatch(deployer, nairaToken.owner());
+        }
         console.log("NairaX deployed to:", address(nairaToken));
 
         // Deploying SwapNaira
@@ -24,19 +44,27 @@ contract DeployScript is Script {
 
         // Transfering the ownership of NairaX to swapp contract
         nairaToken.transferOwnership(address(swap));
+        if (nairaToken.owner() != address(swap)) {
+            revert NairaX__OwnershipMismatch(address(swap), nairaToken.owner());
+        }
+
+        swap.initialize();
+        if (!swap.initialized()) {
+            revert NairaX__UninitializedContract();
+        }
 
         // Deploy dummy TestBTC
-        TestToken tBTC = new TestToken("Test Bitcoin", "tBTC", 1_000_000e18);
+        TestToken tBTC = new TestToken("Test Bitcoin", "tBTC", INITIAL_TBTC_SUPPLY);
         console.log("TestBTC deployed to:", address(tBTC));
 
         // Setting Exchange rates
         // ETH
-        swap.setRate(address(0), 1_000_000e18);
-        swap.setRate(address(tBTC), 92_000_000e18);
+        swap.setRate(address(0), ETH_TO_NGN_RATE);
+        swap.setRate(address(tBTC), BTC_TO_NGN_RATE);
 
         // Register tBTC as Supported Token
         swap.setTokenSupport(address(tBTC), true);
 
-        vm.stopBroadcast();
+        vm.stopBroadcast(); 
     }
 }
