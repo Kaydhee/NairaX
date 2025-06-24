@@ -100,7 +100,7 @@ const App = () => {
 				style={{ marginTop: 10, width: '100%' }}
 			/>
 
-			<p>
+			<p className='text-primary'>
 				Rate: 1 {token.toUpperCase()} = ₦{rate}
 			</p>
 
