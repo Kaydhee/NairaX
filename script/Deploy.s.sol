@@ -17,13 +17,29 @@ contract DeployScript is Script {
     uint256 public constant ETH_TO_NGN_RATE = 1_000_000e18;
     uint256 public constant BTC_TO_NGN_RATE = 92_000_000e18;
 
+    NairaX private _nairaToken;
+    SwapNaira private _swap;
+    TestToken private _tBTC;
+
+    function nairaToken() public view returns (NairaX) {
+        return _nairaToken;
+    }
+
+    function swap() public view returns (SwapNaira) {
+        return _swap;
+    }
+
+    function tBTC() public view returns (TestToken) {
+        return _tBTC;
+    }
+
     function run() external {
         uint256 deployerPrivateKey = uint256(vm.envBytes32("PRIVATE_KEY"));
         address deployer = vm.addr(deployerPrivateKey);
 
-        if (deployer.balance == 0) {
-            revert NairaX__InvalidDeployer(deployer, 0);
-        }
+    if (block.chainid != 31337 && deployer.balance == 0) { 
+        revert NairaX__InvalidDeployer(deployer, 0);
+    }
 
         console.log("\n=== Deployment Started ===");
         console.log("Deployer Address:", deployer);
@@ -31,44 +47,45 @@ contract DeployScript is Script {
     
         vm.startBroadcast(deployerPrivateKey);
 
-        // Deploy NairaX
-        NairaX nairaToken = new NairaX(deployer);
-        if (nairaToken.owner() != deployer) {
-            revert NairaX__OwnershipMismatch(deployer, nairaToken.owner());
+        
+        // NairaX nairaToken = new NairaX(deployer);
+        _nairaToken = new NairaX(deployer);
+        if (_nairaToken.owner() != deployer) {
+            revert NairaX__OwnershipMismatch(deployer, _nairaToken.owner());
         }
-        console.log("NairaX deployed to:", address(nairaToken));
+        console.log("NairaX deployed to:", address(_nairaToken));
 
-        // Deploying SwapNaira
-        SwapNaira swap = new SwapNaira(address(nairaToken));
-        console.log("SwapNaira deployed to:", address(swap));
+        
+        // SwapNaira swap = new SwapNaira(address(nairaToken));
+        _swap = new SwapNaira(address(_nairaToken));
+        console.log("SwapNaira deployed to:", address(_swap));
 
-        // Transfering the ownership of NairaX to swapp contract
-        nairaToken.transferOwnership(address(swap));
-        if (nairaToken.owner() != address(swap)) {
-            revert NairaX__OwnershipMismatch(address(swap), nairaToken.owner());
+        _nairaToken.transferOwnership(address(_swap));
+        if (_nairaToken.owner() != address(_swap)) {
+            revert NairaX__OwnershipMismatch(address(_swap), _nairaToken.owner());
         }
 
-        swap.initialize();
-        if (!swap.initialized()) {
+        _swap.initialize();
+        if (!_swap.initialized()) {
             revert NairaX__UninitializedContract();
         }
 
-        // Deploy dummy TestBTC
-        TestToken tBTC = new TestToken("Test Bitcoin", "tBTC", INITIAL_TBTC_SUPPLY);
-        console.log("TestBTC deployed to:", address(tBTC));
+        // TestToken tBTC = new TestToken("Test Bitcoin", "tBTC", INITIAL_TBTC_SUPPLY);
+        _tBTC = new TestToken("Test Bitcoin", "tBTC", INITIAL_TBTC_SUPPLY);
+        console.log("TestBTC deployed to:", address(_tBTC));
 
-        try swap.setRate(address(0), ETH_TO_NGN_RATE) {
+        try _swap.setRate(address(0), ETH_TO_NGN_RATE) {
         } catch  {
             revert NairaX__ConfigurationFailed("Eth rate");
         }
 
-        try swap.setRate(address(tBTC), BTC_TO_NGN_RATE) {
+        try _swap.setRate(address(_tBTC), BTC_TO_NGN_RATE) {
 
         } catch {
             revert NairaX__ConfigurationFailed("BTC rate");
         }
 
-        try swap.setTokenSupport(address(tBTC), true) {
+        try _swap.setTokenSupport(address(_tBTC), true) {
 
         } catch {
             revert NairaX__ConfigurationFailed("Token support");
@@ -77,9 +94,9 @@ contract DeployScript is Script {
         vm.stopBroadcast(); 
 
         console.log("\n=== Deployment Successful ===");
-        console.log("NairaX:", address(nairaToken));
-        console.log("SwapNaira:", address(swap));
-        console.log("TestBTC:", address(tBTC));
+        console.log("NairaX:", address(_nairaToken));
+        console.log("SwapNaira:", address(_swap));
+        console.log("TestBTC:", address(_tBTC));
         console.log("\nNext Steps:");
         console.log("1. Verify contracts (if on live network)");
         console.log("2. Run tests: forge test");
