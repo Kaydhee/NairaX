@@ -2,7 +2,6 @@ import { useEffect, useState, useCallback } from 'react';
 import { ethers } from 'ethers';
 import swapAbi from './abi/SwapNaira.json';
 import tokenAbi from './abi/TestToken.json';
-// import nairaAbi from './abi/NairaX.json';
 import contracts from './contracts.json';
 
 const App = () => {
@@ -30,6 +29,7 @@ const App = () => {
 			swapAbi,
 			provider
 		);
+
 		const tokenAddress =
 			token === 'eth' ? ethers.ZeroAddress : contracts.TestToken;
 		const result = await contract.getRate(tokenAddress);
@@ -38,6 +38,7 @@ const App = () => {
 
 	const swap = async () => {
 		const swap = new ethers.Contract(contracts.SwapNaira, swapAbi, signer);
+
 		const parsedAmount = ethers.parseEther(amount);
 
 		if (token === 'eth') {
@@ -49,10 +50,12 @@ const App = () => {
 				tokenAbi,
 				signer
 			);
+
 			const allowance = await tokenContract.allowance(
 				account,
 				contracts.SwapNaira
 			);
+
 			if (allowance < parsedAmount) {
 				const approveTx = await tokenContract.approve(
 					contracts.SwapNaira,
@@ -60,15 +63,14 @@ const App = () => {
 				);
 				await approveTx.wait();
 			}
-			const tx = await swap.swapTokenForNaira(
-				contracts.TestToken,
-				parsedAmount
-			);
+
+			const tx = await swap.swapTokenToNaira(contracts.TestToken, parsedAmount);
 			await tx.wait();
 		}
 
-		alert('Swap successful!');
+		alert('Swap successful');
 	};
+
 	useEffect(() => {
 		getRate();
 	}, [getRate]);
