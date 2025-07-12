@@ -3,6 +3,7 @@ import { ethers } from 'ethers';
 import swapAbi from './abi/SwapNaira.json';
 import tokenAbi from './abi/TestToken.json';
 import contracts from './contracts.json';
+import LivePrices from './components/LivePrices';
 
 const App = () => {
 	const [provider, setProvider] = useState(null);
@@ -111,6 +112,8 @@ const App = () => {
 				disabled={!amount || !account}>
 				Swap
 			</button>
+
+			<LivePrices />
 		</div>
 	);
 };
