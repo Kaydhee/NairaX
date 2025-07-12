@@ -3,7 +3,8 @@ import { ethers } from 'ethers';
 import swapAbi from './abi/SwapNaira.json';
 import tokenAbi from './abi/TestToken.json';
 import contracts from './contracts.json';
-import LivePrices from './components/LivePrices';
+// import LivePrices from './components/LivePrices';
+import SwapForm from './components/SwapForm';
 
 const App = () => {
 	const [provider, setProvider] = useState(null);
@@ -33,7 +34,7 @@ const App = () => {
 
 		const tokenAddress =
 			token === 'eth' ? ethers.ZeroAddress : contracts.TestToken;
-		const result = await contract.getRate(tokenAddress);
+		const result = await contract.rates(tokenAddress);
 		setRate(ethers.formatEther(result));
 	}, [provider, token]);
 
@@ -113,7 +114,8 @@ const App = () => {
 				Swap
 			</button>
 
-			<LivePrices />
+			{/* <LivePrices /> */}
+			<SwapForm signer={signer} />
 		</div>
 	);
 };

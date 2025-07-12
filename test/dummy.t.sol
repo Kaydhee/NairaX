@@ -78,19 +78,19 @@
 //   const handleSwap = async () => {
 //     try {
 //       setTxStatus("⏳ Swapping...");
-//       if (selectedToken.address === ethers.constants.AddressZero) {
-//         const tx = await swapContract.swapToNaira(selectedToken.address, {
-//           value: ethers.utils.parseEther(amount),
-//         });
-//         await tx.wait();
-//       } else {
-//         const tokenContract = new ethers.Contract(
-//           selectedToken.address,
-//           [
-//             "function approve(address spender, uint256 amount) public returns (bool)",
-//           ],
-//           signer
-//         );
+    //   if (selectedToken.address === ethers.constants.AddressZero) {
+    //     const tx = await swapContract.swapToNaira(selectedToken.address, {
+    //       value: ethers.utils.parseEther(amount),
+    //     });
+    //     await tx.wait();
+    //   } else {
+    //     const tokenContract = new ethers.Contract(
+    //       selectedToken.address,
+    //       [
+    //         "function approve(address spender, uint256 amount) public returns (bool)",
+    //       ],
+    //       signer
+    //     );
 //         const parsedAmount = ethers.utils.parseUnits(amount, selectedToken.decimals);
 //         await tokenContract.approve(swapContract.address, parsedAmount);
 
