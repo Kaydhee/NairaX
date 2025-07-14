@@ -5,6 +5,7 @@ import tokenAbi from './abi/TestToken.json';
 import contracts from './contracts.json';
 // import LivePrices from './components/LivePrices';
 import SwapForm from './components/SwapForm';
+import Nav from './components/Nav';
 
 const App = () => {
 	const [provider, setProvider] = useState(null);
@@ -78,45 +79,48 @@ const App = () => {
 	}, [getRate]);
 
 	return (
-		<div style={{ padding: 20, maxWidth: 480, margin: 'auto' }}>
-			<h2>🔁 Swap to NairaX</h2>
+		<header className='bg-primary text-white w-full'>
+			<Nav />
+			<div style={{ padding: 20, maxWidth: 480, margin: 'auto' }}>
+				<h2>🔁 Swap to NairaX</h2>
 
-			{account ? (
-				<p>
-					Connected: {account.slice(0, 6)}...{account.slice(-4)}
+				{account ? (
+					<p>
+						Connected: {account.slice(0, 6)}...{account.slice(-4)}
+					</p>
+				) : (
+					<button onClick={connectWallet}>Connect Wallet</button>
+				)}
+
+				<select
+					value={token}
+					onChange={(e) => setToken(e.target.value)}>
+					<option value='eth'>ETH</option>
+					<option value='tbtc'>TestBTC</option>
+				</select>
+
+				<input
+					type='text'
+					placeholder='Amount'
+					value={amount}
+					onChange={(e) => setAmount(e.target.value)}
+					style={{ marginTop: 10, width: '100%' }}
+				/>
+
+				<p className='text-primary'>
+					Rate: 1 {token.toUpperCase()} = ₦{rate}
 				</p>
-			) : (
-				<button onClick={connectWallet}>Connect Wallet</button>
-			)}
 
-			<select
-				value={token}
-				onChange={(e) => setToken(e.target.value)}>
-				<option value='eth'>ETH</option>
-				<option value='tbtc'>TestBTC</option>
-			</select>
+				<button
+					onClick={swap}
+					disabled={!amount || !account}>
+					Swap
+				</button>
 
-			<input
-				type='text'
-				placeholder='Amount'
-				value={amount}
-				onChange={(e) => setAmount(e.target.value)}
-				style={{ marginTop: 10, width: '100%' }}
-			/>
-
-			<p className='text-primary'>
-				Rate: 1 {token.toUpperCase()} = ₦{rate}
-			</p>
-
-			<button
-				onClick={swap}
-				disabled={!amount || !account}>
-				Swap
-			</button>
-
-			{/* <LivePrices /> */}
-			<SwapForm signer={signer} />
-		</div>
+				{/* <LivePrices /> */}
+				<SwapForm signer={signer} />
+			</div>
+		</header>
 	);
 };
 

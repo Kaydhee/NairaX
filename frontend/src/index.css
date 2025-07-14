@@ -1,3 +1,117 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+*,
+*:after,
+*:before {
+	box-sizing: border-box;
+	margin: 0;
+	padding: 0;
+	border: none;
+	outline: none;
+	list-style: none;
+	text-decoration: none;
+}
+
+.spaceGrotesk {
+	font-family: 'Space Grotesk', sans-serif;
+	font-weight: 400;
+	font-style: normal;
+}
+
+.navItems {
+	position: absolute;
+	top: 10%;
+	right: 2rem;
+	flex-direction: column;
+	gap: 0;
+	align-items: flex-start;
+	/* display: none; */
+	perspective: 500px;
+}
+
+.navItems li {
+	width: 100%;
+	animation: navAnimation 1s ease forwards;
+	transform: rotateY(90deg) rotateX(90deg);
+	transform-origin: top right;
+	opacity: 0;
+}
+
+.navItems li:nth-child(2) {
+	animation-delay: 300ms;
+}
+
+.navItems li:nth-child(3) {
+	animation-delay: 600ms;
+}
+
+.navItems li:nth-child(4) {
+	animation-delay: 900ms;
+}
+
+.navItems li a {
+	/* background: #fff; */
+	height: 3rem;
+	width: 100%;
+	display: flex;
+	align-items: center;
+	padding: 0 3rem 0 2.5rem;
+	border-top: 1px solid #ffffff;
+}
+
+@keyframes navAnimation {
+	to {
+		transform: rotate(0);
+		opacity: 1;
+	}
+}
+
+.nav li:hover {
+	background-color: #5bc8ac;
+	transition: all 400ms ease;
+	border-radius: 8px;
+}
+
+.nav li:hover a {
+	color: white;
+}
+
+.service {
+	animation-delay: 400ms;
+	animation: slide-down 1.5s linear forwards;
+}
+
+@keyframes slide-down {
+	0% {
+		opacity: 0;
+	}
+
+	0% {
+		opacity: 1;
+	}
+}
+
+@keyframes fade-in {
+	0% {
+		margin-top: 0;
+		/* margin-left: -4rem; */
+		opacity: 0;
+	}
+
+	50% {
+		margin-top: 1rem;
+		/* margin-left: -2rem; */
+		opacity: 0.5;
+	}
+
+	100% {
+		margin-top: 2rem;
+		margin-left: 0rem;
+		opacity: 1;
+		z-index: 50;
+	}
+}

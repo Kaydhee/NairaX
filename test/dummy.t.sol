@@ -1,159 +1,98 @@
-// import React, { useEffect, useState } from "react";
-// import { ethers } from "ethers";
-// import contracts from "../contracts.json";
-// import swapAbi from "../abi/SwapNaira.json";
+// import React, { useState } from 'react';
 
-// const tokenList = [
-//   {
-//     label: "ETH",
-//     id: "ethereum",
-//     address: ethers.constants.AddressZero,
-//     decimals: 18,
-//   },
-//   {
-//     label: "tBTC",
-//     id: "bitcoin",
-//     address: contracts.TestBTC,
-//     decimals: 18,
-//   },
-// ];
+// const CryptoConverter = () => {
+//   const [payAmount, setPayAmount] = useState(10);
+//   const [receiveAmount, setReceiveAmount] = useState(126.274);
+//   const [payCurrency, setPayCurrency] = useState('INJ');
+//   const [receiveCurrency, setReceiveCurrency] = useState('USDT');
 
-// const SwapForm = ({ provider, signer }) => {
-//   const [selectedToken, setSelectedToken] = useState(tokenList[0]);
-//   const [amount, setAmount] = useState("");
-//   const [nairaAmount, setNairaAmount] = useState("0");
-//   const [txStatus, setTxStatus] = useState("");
-//   const [marketPrice, setMarketPrice] = useState(null);
-//   const [dummyRate, setDummyRate] = useState(null);
-
-//   const swapContract = new ethers.Contract(
-//     contracts.SwapNaira,
-//     swapAbi,
-//     signer
-//   );
-
-//   // 📈 Fetch live market price
-//   useEffect(() => {
-//     const fetchPrice = async () => {
-//       try {
-//         const res = await fetch(
-//           `https://api.coingecko.com/api/v3/simple/price?ids=${selectedToken.id}&vs_currencies=ngn`
-//         );
-//         const data = await res.json();
-//         setMarketPrice(data[selectedToken.id]?.ngn || null);
-//       } catch (err) {
-//         console.error("Price fetch failed:", err);
-//       }
-//     };
-
-//     fetchPrice();
-//   }, [selectedToken]);
-
-//   // 💰 Fetch dummy contract rate
-//   useEffect(() => {
-//     const getRate = async () => {
-//       try {
-//         const rate = await swapContract.getRate(selectedToken.address);
-//         setDummyRate(Number(ethers.utils.formatEther(rate)));
-//       } catch (err) {
-//         console.error("Rate fetch failed:", err);
-//         setDummyRate(null);
-//       }
-//     };
-
-//     if (signer) getRate();
-//   }, [selectedToken, signer]);
-
-//   // 🧮 Calculate expected NairaX
-//   useEffect(() => {
-//     if (!amount || !dummyRate) return;
-//     const parsed = parseFloat(amount);
-//     if (!isNaN(parsed)) {
-//       setNairaAmount((parsed * dummyRate).toFixed(2));
-//     } else {
-//       setNairaAmount("0");
-//     }
-//   }, [amount, dummyRate]);
-
-//   const handleSwap = async () => {
-//     try {
-//       setTxStatus("⏳ Swapping...");
-    //   if (selectedToken.address === ethers.constants.AddressZero) {
-    //     const tx = await swapContract.swapToNaira(selectedToken.address, {
-    //       value: ethers.utils.parseEther(amount),
-    //     });
-    //     await tx.wait();
-    //   } else {
-    //     const tokenContract = new ethers.Contract(
-    //       selectedToken.address,
-    //       [
-    //         "function approve(address spender, uint256 amount) public returns (bool)",
-    //       ],
-    //       signer
-    //     );
-//         const parsedAmount = ethers.utils.parseUnits(amount, selectedToken.decimals);
-//         await tokenContract.approve(swapContract.address, parsedAmount);
-
-//         const tx = await swapContract.swapToNaira(selectedToken.address);
-//         await tx.wait();
-//       }
-
-//       setTxStatus("✅ Swap successful!");
-//     } catch (err) {
-//       console.error(err);
-//       setTxStatus("❌ Swap failed.");
-//     }
+//   const handleSwap = () => {
+//     const tempAmount = payAmount;
+//     const tempCurrency = payCurrency;
+//     setPayAmount(receiveAmount);
+//     setPayCurrency(receiveCurrency);
+//     setReceiveAmount(tempAmount);
+//     setReceiveCurrency(tempCurrency);
+//     // Add logic to update USD values based on conversion rates if needed
 //   };
 
 //   return (
-//     <div className="swap-form">
-//       <h2>🔁 Swap to NairaX</h2>
+//     <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
+//       <div className="bg-gray-800 rounded-lg p-6 w-full max-w-md">
+//         {/* You Pay Section */}
+//         <div classAmount="mb-6">
+//           <p className="text-gray-400 text-sm mb-2">You pay</p>
+//           <div className="flex items-center justify-between">
+//             <input
+//               type="number"
+//               value={payAmount}
+//               onChange={(e) => setPayAmount(e.target.value)}
+//               className="bg-transparent text-white text-3xl font-bold w-1/2 outline-none"
+//             />
+//             <div className="bg-gray-700 rounded-full p-2 flex items-center">
+//               <span className="w-6 h-6 bg-blue-500 rounded-full mr-2"></span>
+//               <select
+//                 value={payCurrency}
+//                 onChange={(e) => setPayCurrency(e.target.value)}
+//                 className="bg-transparent text-white outline-none"
+//               >
+//                 <option value="INJ">INJ</option>
+//                 <option value="USDT">USDT</option>
+//               </select>
+//             </div>
+//           </div>
+//           <p className="text-gray-500 text-sm mt-1">$126.80</p>
+//         </div>
 
-//       <label>Choose Token:</label>
-//       <select
-//         value={selectedToken.label}
-//         onChange={(e) =>
-//           setSelectedToken(tokenList.find((t) => t.label === e.target.value))
-//         }
-//       >
-//         {tokenList.map((token) => (
-//           <option key={token.label} value={token.label}>
-//             {token.label}
-//           </option>
-//         ))}
-//       </select>
+//         {/* Swap Button */}
+//         <div className="flex justify-center mb-6">
+//           <button
+//             onClick={handleSwap}
+//             className="bg-blue-500 rounded-full p-2 hover:bg-blue-600 transition"
+//           >
+//             <svg
+//               className="w-6 h-6 text-white"
+//               fill="none"
+//               stroke="currentColor"
+//               viewBox="0 0 24 24"
+//             >
+//               <path
+//                 strokeLinecap="round"
+//                 strokeLinejoin="round"
+//                 strokeWidth="2"
+//                 d="M8 7h12m0 0l-4-4m4 4l-4 4m-4 4H4m0 0l4 4m-4-4l4-4"
+//               />
+//             </svg>
+//           </button>
+//         </div>
 
-//       <label>Enter Amount ({selectedToken.label}):</label>
-//       <input
-//         type="text"
-//         placeholder="e.g. 0.05"
-//         value={amount}
-//         onChange={(e) => setAmount(e.target.value)}
-//       />
-
-//       <div className="rates-info">
-//         <p>
-//           💹 <strong>Market Price:</strong>{" "}
-//           {marketPrice ? `₦${marketPrice.toLocaleString()}` : "Loading..."}
-//         </p>
-//         <p>
-//           🧪 <strong>Dummy Rate:</strong> ₦{dummyRate ?? "Loading..."} / {selectedToken.label}
-//         </p>
-//         <p>
-//           📥 <strong>You Receive:</strong> {nairaAmount} NairaX
-//         </p>
-
-//         {marketPrice && dummyRate && Math.abs(marketPrice - dummyRate) > marketPrice * 0.1 && (
-//           <p style={{ color: "orange" }}>
-//             ⚠️ Warning: Dummy rate differs significantly from live market.
-//           </p>
-//         )}
+//         {/* You Receive Section */}
+//         <div>
+//           <p className="text-gray-400 text-sm mb-2">You receive</p>
+//           <div className="flex items-center justify-between">
+//             <input
+//               type="number"
+//               value={receiveAmount}
+//               onChange={(e) => setReceiveAmount(e.target.value)}
+//               className="bg-transparent text-white text-3xl font-bold w-1/2 outline-none"
+//             />
+//             <div className="bg-gray-700 rounded-full p-2 flex items-center">
+//               <span className="w-6 h-6 bg-green-500 rounded-full mr-2"></span>
+//               <select
+//                 value={receiveCurrency}
+//                 onChange={(e) => setReceiveCurrency(e.target.value)}
+//                 className="bg-transparent text-white outline-none"
+//               >
+//                 <option value="USDT">USDT</option>
+//                 <option value="INJ">INJ</option>
+//               </select>
+//             </div>
+//           </div>
+//           <p className="text-gray-500 text-sm mt-1">$126.31</p>
+//         </div>
 //       </div>
-
-//       <button onClick={handleSwap}>Swap</button>
-//       <p>{txStatus}</p>
 //     </div>
 //   );
 // };
 
-// export default SwapForm;
+// export default CryptoConverter;
