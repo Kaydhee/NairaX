@@ -93,6 +93,7 @@ const App = () => {
 				)}
 
 				<select
+					className='bg-primary text-white'
 					value={token}
 					onChange={(e) => setToken(e.target.value)}>
 					<option value='eth'>ETH</option>
@@ -100,6 +101,7 @@ const App = () => {
 				</select>
 
 				<input
+					className='bg-primary text-white'
 					type='text'
 					placeholder='Amount'
 					value={amount}

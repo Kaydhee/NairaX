@@ -4,15 +4,13 @@ import balance from '../assets/balance_icon.png';
 import { useState } from 'react';
 import { ethers } from 'ethers';
 
-import { IoMdClose, IoMdSearch } from 'react-icons/io';
+import { IoMdClose } from 'react-icons/io';
 import { MdArrowDropDown } from 'react-icons/md';
 import { HiOutlineMenuAlt1 } from 'react-icons/hi';
 
 import Button from './Button';
 
 const Nav = () => {
-	const [provider, setProvider] = useState(null);
-	const [signer, setSigner] = useState(null);
 	const [account, setAccount] = useState('');
 	const [showMenu, setShowMenu] = useState(false);
 	const [isExpanded, setIsExpanded] = useState(false);
@@ -22,8 +20,6 @@ const Nav = () => {
 		const signer = await provider.getSigner();
 		const address = await signer.getAddress();
 
-		setProvider(provider);
-		setSigner(signer);
 		setAccount(address);
 	};
 
@@ -50,8 +46,6 @@ const Nav = () => {
 						placeholder='Search...'
 						className='hidden sm:block bg-variantColor3 text-white pt-4 pr-8 pb-4 pl-4 placeholder:text-placeholderColor'
 					/>
-
-					<IoMdSearch className='block sm:hidden text-2xl font-bold' />
 
 					<ul className='hidden sm:flex items-center justify-center gap-4'>
 						<li className='flex items-center justify-center text-white cursor-pointer'>
