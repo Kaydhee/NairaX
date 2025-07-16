@@ -1,4 +1,4 @@
-import logo from '../assets/logo.png';
+import logo from '../assets/Logo.png';
 import balance from '../assets/balance_icon.png';
 
 import { useState } from 'react';
