@@ -1,127 +1,49 @@
-import { useEffect, useState, useCallback } from 'react';
+/* eslint-disable no-unused-vars */
+import { useEffect, useState } from 'react';
 import { ethers } from 'ethers';
-import swapAbi from './abi/SwapNaira.json';
-import tokenAbi from './abi/TestToken.json';
-import contracts from './contracts.json';
-// import LivePrices from './components/LivePrices';
+
+import LivePrices from './components/LivePrices';
 import SwapForm from './components/SwapForm';
 import Nav from './components/Nav';
+import Hero from './components/Hero';
 
 const App = () => {
 	const [provider, setProvider] = useState(null);
 	const [signer, setSigner] = useState(null);
 	const [account, setAccount] = useState('');
-	const [amount, setAmount] = useState('');
-	const [rate, setRate] = useState('');
-	const [token, setToken] = useState('eth');
 
 	const connectWallet = async () => {
-		const provider = new ethers.BrowserProvider(window.ethereum);
-		const signer = await provider.getSigner();
-		const address = await signer.getAddress();
+		try {
+			const newProvider = new ethers.BrowserProvider(window.ethereum);
+			const newSigner = await newProvider.getSigner();
+			const address = await newSigner.getAddress();
 
-		setProvider(provider);
-		setSigner(signer);
-		setAccount(address);
-	};
-
-	const getRate = useCallback(async () => {
-		if (!provider) return;
-		const contract = new ethers.Contract(
-			contracts.SwapNaira,
-			swapAbi,
-			provider
-		);
-
-		const tokenAddress =
-			token === 'eth' ? ethers.ZeroAddress : contracts.TestToken;
-		const result = await contract.rates(tokenAddress);
-		setRate(ethers.formatEther(result));
-	}, [provider, token]);
-
-	const swap = async () => {
-		const swap = new ethers.Contract(contracts.SwapNaira, swapAbi, signer);
-
-		const parsedAmount = ethers.parseEther(amount);
-
-		if (token === 'eth') {
-			const tx = await swap.swapETHToNaira({ value: parsedAmount });
-			await tx.wait();
-		} else {
-			const tokenContract = new ethers.Contract(
-				contracts.TestToken,
-				tokenAbi,
-				signer
-			);
-
-			const allowance = await tokenContract.allowance(
-				account,
-				contracts.SwapNaira
-			);
-
-			if (allowance < parsedAmount) {
-				const approveTx = await tokenContract.approve(
-					contracts.SwapNaira,
-					parsedAmount
-				);
-				await approveTx.wait();
-			}
-
-			const tx = await swap.swapTokenToNaira(contracts.TestToken, parsedAmount);
-			await tx.wait();
+			setProvider(newProvider);
+			setSigner(newSigner);
+			setAccount(address);
+		} catch (err) {
+			console.error('Wallet connection failed:', err);
 		}
-
-		alert('Swap successful');
 	};
 
 	useEffect(() => {
-		getRate();
-	}, [getRate]);
+		if (window.ethereum) {
+			window.ethereum.request({ method: 'eth_accounts' }).then((accounts) => {
+				if (accounts.length > 0) connectWallet();
+			});
+		}
+	}, []);
 
 	return (
 		<header className='bg-primary text-white w-full'>
-			<Nav />
-			<div style={{ padding: 20, maxWidth: 480, margin: 'auto' }}>
-				<h2>🔁 Swap to NairaX</h2>
+			<Nav
+				account={account}
+				connectWallet={connectWallet}
+			/>
+			<Hero />
 
-				{account ? (
-					<p>
-						Connected: {account.slice(0, 6)}...{account.slice(-4)}
-					</p>
-				) : (
-					<button onClick={connectWallet}>Connect Wallet</button>
-				)}
-
-				<select
-					className='bg-primary text-white'
-					value={token}
-					onChange={(e) => setToken(e.target.value)}>
-					<option value='eth'>ETH</option>
-					<option value='tbtc'>TestBTC</option>
-				</select>
-
-				<input
-					className='bg-primary text-white'
-					type='text'
-					placeholder='Amount'
-					value={amount}
-					onChange={(e) => setAmount(e.target.value)}
-					style={{ marginTop: 10, width: '100%' }}
-				/>
-
-				<p className='text-primary'>
-					Rate: 1 {token.toUpperCase()} = ₦{rate}
-				</p>
-
-				<button
-					onClick={swap}
-					disabled={!amount || !account}>
-					Swap
-				</button>
-
-				{/* <LivePrices /> */}
-				<SwapForm signer={signer} />
-			</div>
+			<SwapForm signer={signer} />
+			<LivePrices />
 		</header>
 	);
 };

@@ -2,31 +2,22 @@ import logo from '../assets/logo.png';
 import balance from '../assets/balance_icon.png';
 
 import { useState } from 'react';
-import { ethers } from 'ethers';
 
 import { IoMdClose } from 'react-icons/io';
 import { MdArrowDropDown } from 'react-icons/md';
 import { HiOutlineMenuAlt1 } from 'react-icons/hi';
 
 import Button from './Button';
+import PropTypes from 'prop-types';
 
-const Nav = () => {
-	const [account, setAccount] = useState('');
+const Nav = ({ account, connectWallet }) => {
 	const [showMenu, setShowMenu] = useState(false);
 	const [isExpanded, setIsExpanded] = useState(false);
 
-	const connectWallet = async () => {
-		const provider = new ethers.BrowserProvider(window.ethereum);
-		const signer = await provider.getSigner();
-		const address = await signer.getAddress();
-
-		setAccount(address);
-	};
-
-	function handleShowMenu() {
+	const handleShowMenu = () => {
 		setShowMenu(!showMenu);
 		setIsExpanded(!isExpanded);
-	}
+	};
 
 	return (
 		<nav className='border-b-2 w-full mx-0 py-4 px-0 bg-primary spaceGrotesk'>
@@ -85,6 +76,10 @@ const Nav = () => {
 			</div>
 		</nav>
 	);
+};
+Nav.propTypes = {
+	account: PropTypes.string,
+	connectWallet: PropTypes.func.isRequired,
 };
 
 export default Nav;
