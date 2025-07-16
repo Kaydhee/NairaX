@@ -1,4 +1,4 @@
-import spaceWarlock from '../assets/spaceWarlock.png';
+import spaceWarlock from '../assets/spacewarlock.png';
 import coralTribe from '../assets/coral.png';
 import bakedBerserk from '../assets/bakedberserkk.png';
 
